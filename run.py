@@ -1,9 +1,34 @@
 import argparse
 
 import numpy as np
+from keras import layers, models, utils
+from keras.datasets import mnist
 
 from src.animate_scatter import AnimateScatter
 from src.whale_optimization import WhaleOptimization
+
+(train_images, train_labels), (test_images, test_labels) = mnist.load_data()
+
+train_images.astype(float)
+test_images.astype(float)
+
+train_images = train_images / 255
+test_images = test_images / 255
+
+train_images.reshape(60000, 28 * 28)
+test_images.reshape(10000, 28 * 28)
+
+categorical_train_labels = utils.to_categorical(train_labels)
+categorical_test_labels = utils.to_categorical(test_labels)
+
+network = models.Sequential()
+network.add(layers.Flatten())
+network.add(layers.Dense(512, activation="relu"))
+network.add(layers.Dense(10, activation="softmax"))
+
+network.compile(
+    optimizer="rmsprop", loss="categorical_crossentropy", metrics=["accuracy"]
+)
 
 
 def parse_cl_args():
@@ -79,6 +104,22 @@ def parse_cl_args():
 # optimization functions from https://en.wikipedia.org/wiki/Test_functions_for_optimization
 
 
+def DNN(X, Y):
+    out = []
+
+    for i in range(0, len(X)):
+        network.fit(
+            train_images,
+            categorical_train_labels,
+            batch_size=int(X[i]),
+            epochs=int(Y[i]),
+        )
+        test_loss, test_acc = network.evaluate(test_images, categorical_test_labels)
+        out.append(test_loss)
+
+    return out
+
+
 def schaffer(X, Y):
     """constraints=100, minimum f(0,0)=0"""
     numer = np.square(np.sin(X ** 2 - Y ** 2)) - 0.5
@@ -128,12 +169,14 @@ def levi(X, Y):
 
 
 def main():
+
     args = parse_cl_args()
 
     nsols = args.nsols
     ngens = args.ngens
 
     funcs = {
+        "DNN": DNN,
         "schaffer": schaffer,
         "eggholder": eggholder,
         "booth": booth,
@@ -142,6 +185,7 @@ def main():
         "levi": levi,
     }
     func_constraints = {
+        "DNN": 100.0,
         "schaffer": 100.0,
         "eggholder": 512.0,
         "booth": 10.0,
@@ -186,22 +230,15 @@ def main():
     solutions = opt_alg.get_solutions()
     colors = [[1.0, 1.0, 1.0] for _ in range(nsols)]
 
-    a_scatter = AnimateScatter(
-        constraints[0][0],
-        constraints[0][1],
-        constraints[1][0],
-        constraints[1][1],
-        solutions,
-        colors,
-        opt_func,
-        args.r,
-        args.t,
-    )
-
+    # a_scatter = AnimateScatter(constraints[0][0],
+    # constraints[0][1],
+    # constraints[1][0],
+    # constraints[1][1],
+    # solutions, colors, opt_func, args.r, args.t)
     for _ in range(ngens):
         opt_alg.optimize()
         solutions = opt_alg.get_solutions()
-        a_scatter.update(solutions)
+        # a_scatter.update(solutions)
 
     opt_alg.print_best_solutions()
 
