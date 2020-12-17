@@ -7,28 +7,38 @@ from keras.datasets import mnist
 from src.animate_scatter import AnimateScatter
 from src.whale_optimization import WhaleOptimization
 
-(train_images, train_labels), (test_images, test_labels) = mnist.load_data()
 
-train_images.astype(float)
-test_images.astype(float)
+class NeuralNetwork:
+    def __init__(self, train_samples, test_samples):
+        self.train_samples_no = train_samples
+        self.test_samples_no = test_samples
+        self.train_images = (
+            self.train_labels
+        ) = self.test_images = self.test_labels = None
+        self.categorical_train_labels = self.categorical_test_labels = None
+        self.network = None
+        self.prepareNetwork()
 
-train_images = train_images / 255
-test_images = test_images / 255
+    def prepareNetwork(self):
+        (self.train_images, self.train_labels), (
+            self.test_images,
+            self.test_labels,
+        ) = mnist.load_data()
+        self.train_images.astype(float) / 255
+        self.test_images.astype(float) / 255
+        self.train_images.reshape(self.train_samples_no, 28 * 28)
+        self.test_images.reshape(self.test_samples_no, 28 * 28)
+        self.categorical_train_labels = utils.to_categorical(self.train_labels)
+        self.categorical_test_labels = utils.to_categorical(self.test_labels)
 
-train_images.reshape(60000, 28 * 28)
-test_images.reshape(10000, 28 * 28)
+        self.network = models.Sequential()
+        self.network.add(layers.Flatten())
+        self.network.add(layers.Dense(512, activation="relu"))
+        self.network.add(layers.Dense(10, activation="softmax"))
 
-categorical_train_labels = utils.to_categorical(train_labels)
-categorical_test_labels = utils.to_categorical(test_labels)
-
-network = models.Sequential()
-network.add(layers.Flatten())
-network.add(layers.Dense(512, activation="relu"))
-network.add(layers.Dense(10, activation="softmax"))
-
-network.compile(
-    optimizer="rmsprop", loss="categorical_crossentropy", metrics=["accuracy"]
-)
+        self.network.compile(
+            optimizer="rmsprop", loss="categorical_crossentropy", metrics=["accuracy"]
+        )
 
 
 def parse_cl_args():
@@ -106,15 +116,17 @@ def parse_cl_args():
 
 def DNN(X, Y):
     out = []
-
+    test_n = NeuralNetwork(train_samples=60000, test_samples=10000)
     for i in range(0, len(X)):
-        network.fit(
-            train_images,
-            categorical_train_labels,
+        test_n.network.fit(
+            test_n.train_images,
+            test_n.categorical_train_labels,
             batch_size=int(X[i]),
             epochs=int(Y[i]),
         )
-        test_loss, test_acc = network.evaluate(test_images, categorical_test_labels)
+        test_loss, test_acc = test_n.network.evaluate(
+            test_n.test_images, test_n.categorical_test_labels
+        )
         out.append(test_loss)
 
     return out
