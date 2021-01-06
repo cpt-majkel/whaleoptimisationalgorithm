@@ -230,7 +230,7 @@ def main():
             return
 
     C = args.c
-    constraints = [[-C, C], [-C, C]]
+    constraints = [[1, 2*C], [1, 2*C]]
 
     opt_func = func
 
