@@ -230,7 +230,8 @@ def main():
             return
 
     C = args.c
-    constraints = [[1, 2*C], [1, 2*C]]
+    # first is batch size, second epoch
+    constraints = [[1, C], [1, 2*C]]
 
     opt_func = func
 
