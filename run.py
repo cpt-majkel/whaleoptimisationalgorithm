@@ -24,8 +24,10 @@ class NeuralNetwork:
             self.test_images,
             self.test_labels,
         ) = mnist.load_data()
-        self.train_images.astype(float) / 255
-        self.test_images.astype(float) / 255
+        self.train_images.astype(float)
+        self.train_images = self.train_images / 255
+        self.test_images.astype(float)
+        self.test_images = self.test_images / 255
         self.train_images.reshape(self.train_samples_no, 28 * 28)
         self.test_images.reshape(self.test_samples_no, 28 * 28)
         self.categorical_train_labels = utils.to_categorical(self.train_labels)
