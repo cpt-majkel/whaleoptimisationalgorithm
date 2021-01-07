@@ -127,7 +127,7 @@ def DNN(X, Y):
     out = []
     test_n = NeuralNetwork(train_samples=60000, test_samples=10000, fashion=True)
     for i in range(0, len(X)):
-        print("---------------------\n{}, {}".format(X[i], Y[i]))
+        print("---------------------\nbatch size: {}, epoch {}".format(int(X[i]), int(Y[i])))
         test_n.network.fit(
             test_n.train_images,
             test_n.categorical_train_labels,
