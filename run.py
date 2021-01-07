@@ -2,16 +2,17 @@ import argparse
 
 import numpy as np
 from keras import layers, models, utils
-from keras.datasets import mnist
+from keras.datasets import mnist, fashion_mnist
 
 from src.animate_scatter import AnimateScatter
 from src.whale_optimization import WhaleOptimization
 
 
 class NeuralNetwork:
-    def __init__(self, train_samples, test_samples):
+    def __init__(self, train_samples, test_samples, fashion=False):
         self.train_samples_no = train_samples
         self.test_samples_no = test_samples
+        self._fashion = fashion
         self.train_images = (
             self.train_labels
         ) = self.test_images = self.test_labels = None
@@ -20,10 +21,16 @@ class NeuralNetwork:
         self.prepareNetwork()
 
     def prepareNetwork(self):
-        (self.train_images, self.train_labels), (
-            self.test_images,
-            self.test_labels,
-        ) = mnist.load_data()
+        if self._fashion:
+            (self.train_images, self.train_labels), (
+                self.test_images,
+                self.test_labels,
+            ) = fashion_mnist.load_data()
+        else:
+            (self.train_images, self.train_labels), (
+                self.test_images,
+                self.test_labels,
+            ) = mnist.load_data()
         self.train_images.astype(float)
         self.train_images = self.train_images / 255
         self.test_images.astype(float)
@@ -118,8 +125,9 @@ def parse_cl_args():
 
 def DNN(X, Y):
     out = []
-    test_n = NeuralNetwork(train_samples=60000, test_samples=10000)
+    test_n = NeuralNetwork(train_samples=60000, test_samples=10000, fashion=True)
     for i in range(0, len(X)):
+        print("---------------------\n{}, {}".format(X[i], Y[i]))
         test_n.network.fit(
             test_n.train_images,
             test_n.categorical_train_labels,
