@@ -1,5 +1,5 @@
-# Whale Optimization Algorithm
-Python implementation of the Whale Optimization Algorithm
+# Whale Optimization Algorithm for DNN purposes
+Python implementation of the Whale Optimization Algorithm used to optimize dnn hyperparameters
 
 ![](gifs/schaffer.gif)
 ![](gifs/cross.gif)
