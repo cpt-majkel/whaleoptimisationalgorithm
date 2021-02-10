@@ -1,9 +1,115 @@
 import argparse
 
 import numpy as np
-
+from keras import layers, models, utils
+from keras.datasets import mnist, fashion_mnist
+import tensorflow as tf
 from src.animate_scatter import AnimateScatter
 from src.whale_optimization import WhaleOptimization
+
+from keras.datasets import reuters
+from keras.utils import to_categorical
+from sklearn.model_selection import train_test_split
+
+cat2batch = {
+    1: 8,
+    2: 16,
+    3: 32,
+    4: 64,
+    5: 128,
+    6: 256,
+    7: 512
+}
+
+cat2opt = {
+    1: "SGD",
+    2: "rmsprop",
+    3: "adam",
+    4: "adadelta",
+    5: "adagrad",
+    6: "adamax"
+}
+
+class NeuralNetwork:
+    def __init__(self, train_samples, test_samples, fashion=False, optimizer="rmsprop"):
+        self.opt = optimizer
+        self.train_samples_no = train_samples
+        self.test_samples_no = test_samples
+        self._fashion = fashion
+        self.train_images = (
+            self.train_labels
+        ) = self.test_images = self.test_labels = None
+        self.categorical_train_labels = self.categorical_test_labels = None
+        self.network = None
+        self.prepareNetwork()
+
+    def prepareNetwork(self):
+        if self._fashion:
+            (self.train_images, self.train_labels), (
+                self.test_images,
+                self.test_labels,
+            ) = fashion_mnist.load_data()
+        else:
+            (self.train_images, self.train_labels), (
+                self.test_images,
+                self.test_labels,
+            ) = mnist.load_data()
+        self.train_images.astype(float)
+        self.train_images = self.train_images / 255
+        self.test_images.astype(float)
+        self.test_images = self.test_images / 255
+        self.train_images.reshape(self.train_samples_no, 28 * 28)
+        self.test_images.reshape(self.test_samples_no, 28 * 28)
+        self.categorical_train_labels = utils.to_categorical(self.train_labels)
+        self.categorical_test_labels = utils.to_categorical(self.test_labels)
+
+        self.network = models.Sequential()
+        self.network.add(layers.Flatten())
+        self.network.add(layers.Dense(512, activation="relu"))
+        self.network.add(layers.Dense(10, activation="softmax"))
+
+        self.network.compile(
+            optimizer=self.opt, loss="categorical_crossentropy", metrics=["accuracy"]
+        )
+
+
+class MultiNN:
+    def __init__(self, optimizer="rmsprop"):
+        self.opt = optimizer
+        (self.train_data, self.train_labels), (self.test_data, self.test_labels) \
+            = reuters.load_data(num_words=10000)
+        self.x_train = self.vectorize_sequences(self.train_data)
+        # Our vectorized test data
+        self.x_test = self.vectorize_sequences(self.test_data)
+        # Vectorize labels
+        self.y_train_raw = np.asarray(self.train_labels).astype('float32')
+        self.y_test_raw = np.asarray(self.test_labels).astype('float32')
+
+        # ONE-HOT ENCODING (convert categorical data into numbers)
+        self.y_train = to_categorical(self.y_train_raw)
+        self.y_test = to_categorical(self.y_test_raw)
+
+        # Divide TEST dataset into TEST & VALIDATION sets
+        #self.x_train, self.x_val, self.y_train, self.y_val = train_test_split(self.x_train, self.y_train, test_size=0.2,
+        #                                                                      shuffle=True)
+        self.network = None
+        self.prepareNetwork()
+
+    def vectorize_sequences(self, sequences, dimension=10000):
+        # Create an all-zero matrix of shape (len(sequences), dimension)
+        results = np.zeros((len(sequences), dimension))
+        for i, sequence in enumerate(sequences):
+            results[i, sequence] = 1.  # set specific indices of results[i] to 1s
+        return results
+
+    def prepareNetwork(self):
+        self.network = models.Sequential()
+        self.network.add(layers.Dense(units=64, activation='relu', input_shape=(self.x_train[0].size,)))
+        self.network.add(layers.Dense(units=64, activation='relu'))
+        self.network.add(layers.Dense(units=64, activation='relu'))
+        self.network.add(layers.Dense(units=46, activation='softmax'))
+
+        self.network.compile(optimizer=self.opt, loss='categorical_crossentropy', metrics=['accuracy'])
 
 
 def parse_cl_args():
@@ -79,6 +185,46 @@ def parse_cl_args():
 # optimization functions from https://en.wikipedia.org/wiki/Test_functions_for_optimization
 
 
+def DNN(X, Y):
+    out = []
+    for i in range(0, len(X)):
+        print("---------------------\nX: {}, Y {}".format(int(X[i]), int(Y[i])))
+        test_n = NeuralNetwork(train_samples=60000, test_samples=10000, fashion=True)
+        test_n.network.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        test_n.network.fit(
+            test_n.train_images,
+            test_n.categorical_train_labels,
+            batch_size=int(X[i]),
+            epochs=int(Y[i]),
+        )
+        test_loss, test_acc = test_n.network.evaluate(
+            test_n.test_images, test_n.categorical_test_labels
+        )
+        out.append(test_acc)
+
+    return out
+
+
+def mNN(X, Y):
+    out = []
+    for i in range(0, len(X)):
+        print("---------------------\nX: {}, Y {}".format(int(X[i]), int(Y[i])))
+        test_n = MultiNN()
+        test_n.network.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        test_n.network.fit(
+            test_n.x_train,
+            test_n.y_train,
+            batch_size=int(X[i]),
+            epochs=int(Y[i]),
+        )
+        test_loss, test_acc = test_n.network.evaluate(
+            test_n.x_test, test_n.y_test
+        )
+        out.append(test_acc)
+
+    return out
+
+
 def schaffer(X, Y):
     """constraints=100, minimum f(0,0)=0"""
     numer = np.square(np.sin(X ** 2 - Y ** 2)) - 0.5
@@ -128,12 +274,15 @@ def levi(X, Y):
 
 
 def main():
+
     args = parse_cl_args()
 
     nsols = args.nsols
     ngens = args.ngens
 
     funcs = {
+        "DNN": DNN,
+        "mNN": mNN,
         "schaffer": schaffer,
         "eggholder": eggholder,
         "booth": booth,
@@ -142,6 +291,8 @@ def main():
         "levi": levi,
     }
     func_constraints = {
+        "DNN": 100.0,
+        "mNN": 100.0,
         "schaffer": 100.0,
         "eggholder": 512.0,
         "booth": 10.0,
@@ -172,7 +323,8 @@ def main():
             return
 
     C = args.c
-    constraints = [[-C, C], [-C, C]]
+    # first is batch size, second epoch
+    constraints = [[10, 500], [5, 50]]
 
     opt_func = func
 
@@ -181,29 +333,41 @@ def main():
     a_step = a / ngens
 
     maximize = args.max
-
+    solutions = []
     opt_alg = WhaleOptimization(opt_func, constraints, nsols, b, a, a_step, maximize)
-    solutions = opt_alg.get_solutions()
+    solutions.append(opt_alg.get_solutions2())
     colors = [[1.0, 1.0, 1.0] for _ in range(nsols)]
 
-    a_scatter = AnimateScatter(
-        constraints[0][0],
-        constraints[0][1],
-        constraints[1][0],
-        constraints[1][1],
-        solutions,
-        colors,
-        opt_func,
-        args.r,
-        args.t,
-    )
-
+    # a_scatter = AnimateScatter(constraints[0][0],
+    # constraints[0][1],
+    # constraints[1][0],
+    # constraints[1][1],
+    # solutions, colors, opt_func, args.r, args.t)
+    import time
+    _time = []
+    t2 = time.time()
     for _ in range(ngens):
+        t1 = time.time()
         opt_alg.optimize()
-        solutions = opt_alg.get_solutions()
-        a_scatter.update(solutions)
-
-    opt_alg.print_best_solutions()
+        _time.append(time.time() - t1)
+        solutions.append(opt_alg.get_solutions2())
+        # a_scatter.update(solutions)
+    gen_time = time.time() - t2
+    _sols = opt_alg.print_best_solutions()
+    _best = sorted(_sols, key=lambda x: x[0], reverse=maximize)[0]
+    #print(_time)
+    #print(_sols)
+    #print(_best)
+    f = open("final.txt", "a")
+    f.write("\n\n\nEpoch (5 - 50) + batch (8-500), adam, Mnist, nsols 30 ngens 15 \n\n")
+    f.write("\nBest solutions (new gen start): (acc, [batch, epoch])\n")
+    for sol in reversed(_sols):
+        f.write("{}\n".format(sol))
+    f.write("\n\nTime [s]\n")
+    for t in _time:
+        f.write("{} ".format(t))
+    f.write("\nBest solution {}\n".format(_best))
+    f.write("Total time: {}\n\n\n\n".format(gen_time))
 
 
 if __name__ == "__main__":
