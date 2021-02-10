@@ -187,40 +187,40 @@ def parse_cl_args():
 
 def DNN(X, Y):
     out = []
-    test_n = NeuralNetwork(train_samples=60000, test_samples=10000, fashion=True)
     for i in range(0, len(X)):
-        print("---------------------\nbatch size: {}, epoch {}".format(int(X[i]), int(Y[i])))
-        test_n.network.compile(optimizer=cat2opt[int(X[i])], loss='categorical_crossentropy', metrics=['accuracy'])
+        print("---------------------\nX: {}, Y {}".format(int(X[i]), int(Y[i])))
+        test_n = NeuralNetwork(train_samples=60000, test_samples=10000, fashion=True)
+        test_n.network.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
         test_n.network.fit(
             test_n.train_images,
             test_n.categorical_train_labels,
-            batch_size=128,
+            batch_size=int(X[i]),
             epochs=int(Y[i]),
         )
         test_loss, test_acc = test_n.network.evaluate(
             test_n.test_images, test_n.categorical_test_labels
         )
-        out.append(test_loss)
+        out.append(test_acc)
 
     return out
 
 
 def mNN(X, Y):
     out = []
-    test_n = MultiNN()
     for i in range(0, len(X)):
-        print("---------------------\nbatch size: {}, epoch {}".format(int(X[i]), int(Y[i])))
-        test_n.network.compile(optimizer=cat2opt[int(X[i])], loss='categorical_crossentropy', metrics=['accuracy'])
+        print("---------------------\nX: {}, Y {}".format(int(X[i]), int(Y[i])))
+        test_n = MultiNN()
+        test_n.network.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
         test_n.network.fit(
             test_n.x_train,
             test_n.y_train,
-            batch_size=128,
+            batch_size=int(X[i]),
             epochs=int(Y[i]),
         )
         test_loss, test_acc = test_n.network.evaluate(
             test_n.x_test, test_n.y_test
         )
-        out.append(test_loss)
+        out.append(test_acc)
 
     return out
 
@@ -324,7 +324,7 @@ def main():
 
     C = args.c
     # first is batch size, second epoch
-    constraints = [[1, 6], [1, 50]]
+    constraints = [[10, 500], [5, 50]]
 
     opt_func = func
 
@@ -358,12 +358,9 @@ def main():
     #print(_time)
     #print(_sols)
     #print(_best)
-    f = open("results.txt", "a")
-    f.write("\n\n\nEpoch (1 - 50) + discrete opt (1: SGD, 2: rmsprop, 3: adam, 4: adadelta, 5: adagrad, 6: adamax), batch 128, Reuters \n\n")
-    f.write("Solutions: (loss, [batch, epoch])\n")
-    for s in solutions:
-        f.write("{}\n".format(s))
-    f.write("\nBest solutions (new gen start): (loss, [batch, epoch])\n")
+    f = open("final.txt", "a")
+    f.write("\n\n\nEpoch (5 - 50) + batch (8-500), adam, Mnist, nsols 30 ngens 15 \n\n")
+    f.write("\nBest solutions (new gen start): (acc, [batch, epoch])\n")
     for sol in reversed(_sols):
         f.write("{}\n".format(sol))
     f.write("\n\nTime [s]\n")
