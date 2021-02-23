@@ -203,7 +203,7 @@ def DNN(X, Y):
             score = test_n.network.fit(
                 trainX,
                 trainY,
-                batch_size=round(cat2batch[X[i]]),
+                batch_size=cat2batch[round(X[i])],
                 epochs=round(Y[i]),
                 verbose=0,
                 validation_data=(valX, valY)
@@ -213,7 +213,7 @@ def DNN(X, Y):
         test_loss, test_acc = test_n.network.evaluate(
             test_n.test_images, test_n.categorical_test_labels, verbose=0
         )
-        print(f"Batch {round(X[i])}, epoch {round(Y[i])}, test accuracy kFold: {round(np.mean(acc), 4)}, "
+        print(f"Batch {cat2batch[round(X[i])]}, epoch {round(Y[i])}, test accuracy kFold: {round(np.mean(acc), 4)}, "
               f"test acc: {round(test_acc, 4)}")
         out.append(np.mean(acc))
 
