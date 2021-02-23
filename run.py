@@ -208,7 +208,7 @@ def DNN(X, Y):
                 verbose=0,
                 validation_data=(valX, valY)
             )
-            acc.append(score.history['accuracy'][-1])
+            acc.append(score.history['val_accuracy'][-1])
 
         test_loss, test_acc = test_n.network.evaluate(
             test_n.test_images, test_n.categorical_test_labels, verbose=0
