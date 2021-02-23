@@ -203,7 +203,7 @@ def DNN(X, Y):
             score = test_n.network.fit(
                 trainX,
                 trainY,
-                batch_size=round(X[i]),
+                batch_size=round(cat2batch[X[i]]),
                 epochs=round(Y[i]),
                 verbose=0,
                 validation_data=(valX, valY)
