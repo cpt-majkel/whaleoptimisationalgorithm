@@ -6,10 +6,13 @@ from keras.datasets import mnist, fashion_mnist
 import tensorflow as tf
 from src.animate_scatter import AnimateScatter
 from src.whale_optimization import WhaleOptimization
-
+from sklearn.model_selection import KFold
 from keras.datasets import reuters
 from keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
+
+
+num_folds = 3
 
 cat2batch = {
     1: 8,
@@ -188,19 +191,31 @@ def parse_cl_args():
 def DNN(X, Y):
     out = []
     for i in range(0, len(X)):
-        print("---------------------\nX: {}, Y {}".format(int(X[i]), int(Y[i])))
+        #print("Main loop")
         test_n = NeuralNetwork(train_samples=60000, test_samples=10000, fashion=True)
         test_n.network.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-        test_n.network.fit(
-            test_n.train_images,
-            test_n.categorical_train_labels,
-            batch_size=int(X[i]),
-            epochs=int(Y[i]),
-        )
+        kfold = KFold(n_splits=num_folds, shuffle=True)
+        acc = []
+        for train, test in kfold.split(test_n.train_images, test_n.train_images):
+            #print("kFold loop")
+            trainX, valX = test_n.train_images[train], test_n.train_images[test]
+            trainY, valY = test_n.categorical_train_labels[train], test_n.categorical_train_labels[test]
+            score = test_n.network.fit(
+                trainX,
+                trainY,
+                batch_size=round(X[i]),
+                epochs=round(Y[i]),
+                verbose=0,
+                validation_data=(valX, valY)
+            )
+            acc.append(score.history['accuracy'][-1])
+
         test_loss, test_acc = test_n.network.evaluate(
-            test_n.test_images, test_n.categorical_test_labels
+            test_n.test_images, test_n.categorical_test_labels, verbose=0
         )
-        out.append(test_acc)
+        print(f"Batch {round(X[i])}, epoch {round(Y[i])}, test accuracy kFold: {round(np.mean(acc), 4)}, "
+              f"test acc: {round(test_acc, 4)}")
+        out.append(np.mean(acc))
 
     return out
 
@@ -208,14 +223,15 @@ def DNN(X, Y):
 def mNN(X, Y):
     out = []
     for i in range(0, len(X)):
-        print("---------------------\nX: {}, Y {}".format(int(X[i]), int(Y[i])))
+        print("---------------------\nX: {}, Y {}".format(round(X[i]), round(Y[i])))
         test_n = MultiNN()
         test_n.network.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
         test_n.network.fit(
             test_n.x_train,
             test_n.y_train,
-            batch_size=int(X[i]),
-            epochs=int(Y[i]),
+            batch_size=round(X[i]),
+            epochs=round(Y[i]),
+            verbose=0,
         )
         test_loss, test_acc = test_n.network.evaluate(
             test_n.x_test, test_n.y_test
@@ -324,7 +340,7 @@ def main():
 
     C = args.c
     # first is batch size, second epoch
-    constraints = [[10, 500], [5, 50]]
+    constraints = [[1, 7], [0, 50]]
 
     opt_func = func
 
@@ -355,20 +371,22 @@ def main():
     gen_time = time.time() - t2
     _sols = opt_alg.print_best_solutions()
     _best = sorted(_sols, key=lambda x: x[0], reverse=maximize)[0]
-    #print(_time)
-    #print(_sols)
-    #print(_best)
-    f = open("final.txt", "a")
-    f.write("\n\n\nEpoch (5 - 50) + batch (8-500), adam, Mnist, nsols 30 ngens 15 \n\n")
-    f.write("\nBest solutions (new gen start): (acc, [batch, epoch])\n")
-    for sol in reversed(_sols):
-        f.write("{}\n".format(sol))
-    f.write("\n\nTime [s]\n")
-    for t in _time:
-        f.write("{} ".format(t))
-    f.write("\nBest solution {}\n".format(_best))
-    f.write("Total time: {}\n\n\n\n".format(gen_time))
+    print("Results:")
+    print(gen_time)
+    print(_sols)
+    print(_best)
+    #f = open("final.txt", "a")
+    #f.write("\n\n\nEpoch (5 - 50) + batch (8-500), adam, Mnist, nsols 30 ngens 15 \n\n")
+    #f.write("\nBest solutions (new gen start): (acc, [batch, epoch])\n")
+    #for sol in reversed(_sols):
+    #    f.write("{}\n".format(sol))
+    #f.write("\n\nTime [s]\n")
+    #for t in _time:
+    #    f.write("{} ".format(t))
+    #f.write("\nBest solution {}\n".format(_best))
+    #f.write("Total time: {}\n\n\n\n".format(gen_time))
 
 
 if __name__ == "__main__":
+    print("Fashion discr batch, epoch 0-50")
     main()
