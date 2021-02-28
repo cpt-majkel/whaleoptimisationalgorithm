@@ -10,6 +10,7 @@ class WhaleOptimization:
 
     def __init__(self, opt_func, constraints, nsols, b, a, a_step, maximize=False):
         self._opt_func = opt_func
+        self.results = {}
         self._constraints = constraints
         self._sols = self._init_solutions(nsols)
         self._b = b
@@ -24,7 +25,11 @@ class WhaleOptimization:
 
     def get_solutions2(self):
         """return solutions"""
-        fitness = self._opt_func(self._sols[:, 0], self._sols[:, 1])
+        try:
+            fitness = self.results[f"X{self._sols[:, 0]}Y{self._sols[:, 1]}"]
+        except KeyError:
+            fitness = self._opt_func(self._sols[:, 0], self._sols[:, 1])
+            self.results[f"X{self._sols[:, 0]}Y{self._sols[:, 1]}"] = fitness
         return [(f, s) for f, s in zip(fitness, self._sols)]
 
     def optimize(self):
@@ -73,7 +78,11 @@ class WhaleOptimization:
 
     def _rank_solutions(self):
         """find best solution"""
-        fitness = self._opt_func(self._sols[:, 0], self._sols[:, 1])
+        try:
+            fitness = self.results[f"X{self._sols[:, 0]}Y{self._sols[:, 1]}"]
+        except KeyError:
+            fitness = self._opt_func(self._sols[:, 0], self._sols[:, 1])
+            self.results[f"X{self._sols[:, 0]}Y{self._sols[:, 1]}"] = fitness
         sol_fitness = [(f, s) for f, s in zip(fitness, self._sols)]
 
         # best solution is at the front of the list
