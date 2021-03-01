@@ -44,9 +44,9 @@ class NeuralNetwork:
         ) = self.test_images = self.test_labels = None
         self.categorical_train_labels = self.categorical_test_labels = None
         self.network = None
-        self.prepareNetwork()
+        self.prepareDataset()
 
-    def prepareNetwork(self):
+    def prepareDataset(self):
         if self._fashion:
             (self.train_images, self.train_labels), (
                 self.test_images,
@@ -66,14 +66,12 @@ class NeuralNetwork:
         self.categorical_train_labels = utils.to_categorical(self.train_labels)
         self.categorical_test_labels = utils.to_categorical(self.test_labels)
 
+    def createArchitecture(self):
+        self.network = None
         self.network = models.Sequential()
         self.network.add(layers.Flatten())
         self.network.add(layers.Dense(512, activation="relu"))
         self.network.add(layers.Dense(10, activation="softmax"))
-
-        self.network.compile(
-            optimizer=self.opt, loss="categorical_crossentropy", metrics=["accuracy"]
-        )
 
 
 class MultiNN:
@@ -96,7 +94,6 @@ class MultiNN:
         #self.x_train, self.x_val, self.y_train, self.y_val = train_test_split(self.x_train, self.y_train, test_size=0.2,
         #                                                                      shuffle=True)
         self.network = None
-        self.prepareNetwork()
 
     def vectorize_sequences(self, sequences, dimension=10000):
         # Create an all-zero matrix of shape (len(sequences), dimension)
@@ -106,12 +103,11 @@ class MultiNN:
         return results
 
     def prepareNetwork(self):
+        self.network = None
         self.network = models.Sequential()
         self.network.add(layers.Dense(units=64, activation='relu', input_shape=(self.x_train[0].size,)))
         self.network.add(layers.Dense(units=64, activation='relu'))
         self.network.add(layers.Dense(units=46, activation='softmax'))
-
-        self.network.compile(optimizer=self.opt, loss='categorical_crossentropy', metrics=['accuracy'])
 
 
 def parse_cl_args():
@@ -191,12 +187,14 @@ def DNN(X, Y):
     out = []
     for i in range(0, len(X)):
         test_n = NeuralNetwork(train_samples=60000, test_samples=10000, fashion=True)
-        test_n.network.compile(optimizer=cat2opt[round(X[i])], loss='categorical_crossentropy', metrics=['accuracy'])
         kfold = KFold(n_splits=num_folds, shuffle=True)
         acc = []
         for train, test in kfold.split(test_n.train_images, test_n.train_images):
             trainX, valX = test_n.train_images[train], test_n.train_images[test]
             trainY, valY = test_n.categorical_train_labels[train], test_n.categorical_train_labels[test]
+            test_n.createArchitecture()
+            test_n.network.compile(optimizer=cat2opt[round(X[i])], loss='categorical_crossentropy',
+                                   metrics=['accuracy'])
             score = test_n.network.fit(
                 trainX,
                 trainY,
@@ -218,12 +216,13 @@ def mNN(X, Y):
     out = []
     for i in range(0, len(X)):
         test_n = MultiNN()
-        test_n.network.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
         kfold = KFold(n_splits=num_folds, shuffle=True)
         acc = []
         for train, test in kfold.split(test_n.x_train, test_n.x_train):
             trainX, valX = test_n.x_train[train], test_n.x_train[test]
             trainY, valY = test_n.y_train[train], test_n.y_train[test]
+            test_n.prepareNetwork()
+            test_n.network.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
             score = test_n.network.fit(
                 trainX,
                 trainY,
