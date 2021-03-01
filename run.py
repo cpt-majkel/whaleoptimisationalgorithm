@@ -109,7 +109,6 @@ class MultiNN:
         self.network = models.Sequential()
         self.network.add(layers.Dense(units=64, activation='relu', input_shape=(self.x_train[0].size,)))
         self.network.add(layers.Dense(units=64, activation='relu'))
-        self.network.add(layers.Dense(units=64, activation='relu'))
         self.network.add(layers.Dense(units=46, activation='softmax'))
 
         self.network.compile(optimizer=self.opt, loss='categorical_crossentropy', metrics=['accuracy'])
@@ -191,15 +190,40 @@ def parse_cl_args():
 def DNN(X, Y):
     out = []
     for i in range(0, len(X)):
-        #print("Main loop")
         test_n = NeuralNetwork(train_samples=60000, test_samples=10000, fashion=True)
-        test_n.network.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        test_n.network.compile(optimizer=cat2opt[round(X[i])], loss='categorical_crossentropy', metrics=['accuracy'])
         kfold = KFold(n_splits=num_folds, shuffle=True)
         acc = []
         for train, test in kfold.split(test_n.train_images, test_n.train_images):
-            #print("kFold loop")
             trainX, valX = test_n.train_images[train], test_n.train_images[test]
             trainY, valY = test_n.categorical_train_labels[train], test_n.categorical_train_labels[test]
+            score = test_n.network.fit(
+                trainX,
+                trainY,
+                batch_size=128,
+                epochs=round(Y[i]),
+                verbose=0,
+                validation_data=(valX, valY)
+            )
+            try:
+                acc.append(score.history['val_accuracy'][-1])
+            except:
+                print(f"Error in val_accuracy readout: {score.history}")
+        print(f"Optimizer {cat2opt[round(X[i])]}, epoch {round(Y[i])}, val accuracy kFold: {round(np.mean(acc), 4)}")
+        out.append(np.mean(acc))
+
+    return out
+
+def mNN(X, Y):
+    out = []
+    for i in range(0, len(X)):
+        test_n = MultiNN()
+        test_n.network.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        kfold = KFold(n_splits=num_folds, shuffle=True)
+        acc = []
+        for train, test in kfold.split(test_n.x_train, test_n.x_train):
+            trainX, valX = test_n.x_train[train], test_n.x_train[test]
+            trainY, valY = test_n.y_train[train], test_n.y_train[test]
             score = test_n.network.fit(
                 trainX,
                 trainY,
@@ -208,35 +232,12 @@ def DNN(X, Y):
                 verbose=0,
                 validation_data=(valX, valY)
             )
-            acc.append(score.history['val_accuracy'][-1])
-
-        test_loss, test_acc = test_n.network.evaluate(
-            test_n.test_images, test_n.categorical_test_labels, verbose=0
-        )
-        print(f"Batch {cat2batch[round(X[i])]}, epoch {round(Y[i])}, test accuracy kFold: {round(np.mean(acc), 4)}, "
-              f"test acc: {round(test_acc, 4)}")
+            try:
+                acc.append(score.history['val_accuracy'][-1])
+            except:
+                print(f"Error in val_accuracy readout: {score.history}")
+        print(f"Batch {cat2batch[round(X[i])]}, epoch {round(Y[i])}, val accuracy kFold: {round(np.mean(acc), 4)}")
         out.append(np.mean(acc))
-
-    return out
-
-
-def mNN(X, Y):
-    out = []
-    for i in range(0, len(X)):
-        print("---------------------\nX: {}, Y {}".format(round(X[i]), round(Y[i])))
-        test_n = MultiNN()
-        test_n.network.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-        test_n.network.fit(
-            test_n.x_train,
-            test_n.y_train,
-            batch_size=round(X[i]),
-            epochs=round(Y[i]),
-            verbose=0,
-        )
-        test_loss, test_acc = test_n.network.evaluate(
-            test_n.x_test, test_n.y_test
-        )
-        out.append(test_acc)
 
     return out
 
@@ -340,7 +341,7 @@ def main():
 
     C = args.c
     # first is batch size, second epoch
-    constraints = [[1, 7], [0, 50]]
+    constraints = [[1, 6], [0, 50]]
 
     opt_func = func
 
@@ -375,18 +376,8 @@ def main():
     print(gen_time)
     print(_sols)
     print(_best)
-    #f = open("final.txt", "a")
-    #f.write("\n\n\nEpoch (5 - 50) + batch (8-500), adam, Mnist, nsols 30 ngens 15 \n\n")
-    #f.write("\nBest solutions (new gen start): (acc, [batch, epoch])\n")
-    #for sol in reversed(_sols):
-    #    f.write("{}\n".format(sol))
-    #f.write("\n\nTime [s]\n")
-    #for t in _time:
-    #    f.write("{} ".format(t))
-    #f.write("\nBest solution {}\n".format(_best))
-    #f.write("Total time: {}\n\n\n\n".format(gen_time))
 
 
 if __name__ == "__main__":
-    print("Fashion discr batch, epoch 0-50")
+    print("MNIST, epoch (0-50), discrete optimiser, batch 128")
     main()
