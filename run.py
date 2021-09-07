@@ -207,7 +207,7 @@ def DNN(X, Y):
                 acc.append(score.history['val_accuracy'][-1])
             except:
                 print(f"Error in val_accuracy readout: {score.history}")
-        print(f"Optimizer {cat2opt[round(X[i])]}, epoch {round(Y[i])}, val accuracy kFold: {round(np.mean(acc), 4)}")
+        print(f"Optimiser {cat2opt[round(X[i])]}, epoch {round(Y[i])}, val accuracy kFold: {round(np.mean(acc), 4)}")
         out.append(np.mean(acc))
 
     return out
@@ -222,11 +222,11 @@ def mNN(X, Y):
             trainX, valX = test_n.x_train[train], test_n.x_train[test]
             trainY, valY = test_n.y_train[train], test_n.y_train[test]
             test_n.prepareNetwork()
-            test_n.network.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+            test_n.network.compile(optimizer=cat2opt[round(X[i])], loss='categorical_crossentropy', metrics=['accuracy'])
             score = test_n.network.fit(
                 trainX,
                 trainY,
-                batch_size=cat2batch[round(X[i])],
+                batch_size=128,
                 epochs=round(Y[i]),
                 verbose=0,
                 validation_data=(valX, valY)
@@ -235,7 +235,7 @@ def mNN(X, Y):
                 acc.append(score.history['val_accuracy'][-1])
             except:
                 print(f"Error in val_accuracy readout: {score.history}")
-        print(f"Batch {cat2batch[round(X[i])]}, epoch {round(Y[i])}, val accuracy kFold: {round(np.mean(acc), 4)}")
+        print(f"Optimizer {cat2opt[round(X[i])]}, epoch {round(Y[i])}, val accuracy kFold: {round(np.mean(acc), 4)}")
         out.append(np.mean(acc))
 
     return out
@@ -340,7 +340,7 @@ def main():
 
     C = args.c
     # first is batch size, second epoch
-    constraints = [[1, 6], [0, 50]]
+    constraints = [[1, 6], [1, 50]]
 
     opt_func = func
 
@@ -362,7 +362,8 @@ def main():
     import time
     _time = []
     t2 = time.time()
-    for _ in range(ngens):
+    for i in range(ngens):
+        #print("Gen {}".format(i))
         t1 = time.time()
         opt_alg.optimize()
         _time.append(time.time() - t1)
@@ -378,5 +379,5 @@ def main():
 
 
 if __name__ == "__main__":
-    print("MNIST, epoch (0-50), discrete optimiser, batch 128")
+    print("MNIST, epoch (0-50), discrete opt, batch 128")
     main()
