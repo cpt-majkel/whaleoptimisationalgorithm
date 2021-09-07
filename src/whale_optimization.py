@@ -51,6 +51,7 @@ class WhaleOptimization:
                     new_s = self._search(s, random_sol, A)
             else:
                 new_s = self._attack(s, best_sol)
+            new_s = self._discretize(new_s)
             new_sols.append(self._constrain_solution(new_s))
 
         self._sols = np.stack(new_sols)
@@ -60,7 +61,7 @@ class WhaleOptimization:
         """initialize solutions uniform randomly in space"""
         sols = []
         for c in self._constraints:
-            sols.append(np.random.uniform(c[0], c[1], size=nsols))
+            sols.append(np.random.randint(c[0], c[1], size=nsols))
 
         sols = np.stack(sols, axis=-1)
         return sols
@@ -137,3 +138,10 @@ class WhaleOptimization:
             np.multiply(np.multiply(D, np.exp(self._b * L)), np.cos(2.0 * np.pi * L))
             + best_sol
         )
+
+    def _discretize(self, sol):
+        dsols = []
+        for el in sol:
+            dsols.append(round(el))
+        return dsols
+

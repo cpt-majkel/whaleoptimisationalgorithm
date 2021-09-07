@@ -193,7 +193,7 @@ def DNN(X, Y):
             trainX, valX = test_n.train_images[train], test_n.train_images[test]
             trainY, valY = test_n.categorical_train_labels[train], test_n.categorical_train_labels[test]
             test_n.createArchitecture()
-            test_n.network.compile(optimizer=cat2opt[round(X[i])], loss='categorical_crossentropy',
+            test_n.network.compile(optimizer=cat2opt[X[i]], loss='categorical_crossentropy',
                                    metrics=['accuracy'])
             score = test_n.network.fit(
                 trainX,
@@ -207,7 +207,7 @@ def DNN(X, Y):
                 acc.append(score.history['val_accuracy'][-1])
             except:
                 print(f"Error in val_accuracy readout: {score.history}")
-        print(f"Optimiser {cat2opt[round(X[i])]}, epoch {round(Y[i])}, val accuracy kFold: {round(np.mean(acc), 4)}")
+        print(f"Optimiser {cat2opt[X[i]]}, epoch {Y[i]}, val accuracy kFold: {round(np.mean(acc), 4)}")
         out.append(np.mean(acc))
 
     return out
@@ -222,7 +222,7 @@ def mNN(X, Y):
             trainX, valX = test_n.x_train[train], test_n.x_train[test]
             trainY, valY = test_n.y_train[train], test_n.y_train[test]
             test_n.prepareNetwork()
-            test_n.network.compile(optimizer=cat2opt[round(X[i])], loss='categorical_crossentropy', metrics=['accuracy'])
+            test_n.network.compile(optimizer=cat2opt[X[i]], loss='categorical_crossentropy', metrics=['accuracy'])
             score = test_n.network.fit(
                 trainX,
                 trainY,
@@ -235,7 +235,7 @@ def mNN(X, Y):
                 acc.append(score.history['val_accuracy'][-1])
             except:
                 print(f"Error in val_accuracy readout: {score.history}")
-        print(f"Optimizer {cat2opt[round(X[i])]}, epoch {round(Y[i])}, val accuracy kFold: {round(np.mean(acc), 4)}")
+        print(f"Optimizer {cat2opt[X[i]]}, epoch {Y[i]}, val accuracy kFold: {round(np.mean(acc), 4)}")
         out.append(np.mean(acc))
 
     return out
