@@ -183,9 +183,10 @@ def parse_cl_args():
 # optimization functions from https://en.wikipedia.org/wiki/Test_functions_for_optimization
 
 
-def DNN(X, Y):
+def DNN(X, Y, Z):
     out = []
     for i in range(0, len(X)):
+        print(f"{X[i]}, {Y[i]}, {Z[i]}")
         test_n = NeuralNetwork(train_samples=60000, test_samples=10000, fashion=True)
         kfold = KFold(n_splits=num_folds, shuffle=True)
         acc = []
@@ -198,8 +199,8 @@ def DNN(X, Y):
             score = test_n.network.fit(
                 trainX,
                 trainY,
-                batch_size=128,
-                epochs=round(Y[i]),
+                batch_size=Z[i],
+                epochs=Y[i],
                 verbose=0,
                 validation_data=(valX, valY)
             )
@@ -207,14 +208,15 @@ def DNN(X, Y):
                 acc.append(score.history['val_accuracy'][-1])
             except:
                 print(f"Error in val_accuracy readout: {score.history}")
-        print(f"Optimiser {cat2opt[X[i]]}, epoch {Y[i]}, val accuracy kFold: {round(np.mean(acc), 4)}")
+        print(f"Optimiser {cat2opt[X[i]]}, epoch {Y[i]}, batch {Z[i]}, val accuracy kFold: {round(np.mean(acc), 4)}")
         out.append(np.mean(acc))
 
     return out
 
-def mNN(X, Y):
+def mNN(X, Y, Z):
     out = []
     for i in range(0, len(X)):
+        print(f"{X[i]}, {Y[i]}, {Z[i]}")
         test_n = MultiNN()
         kfold = KFold(n_splits=num_folds, shuffle=True)
         acc = []
@@ -226,8 +228,8 @@ def mNN(X, Y):
             score = test_n.network.fit(
                 trainX,
                 trainY,
-                batch_size=128,
-                epochs=round(Y[i]),
+                batch_size=Z[i],
+                epochs=Y[i],
                 verbose=0,
                 validation_data=(valX, valY)
             )
@@ -235,58 +237,10 @@ def mNN(X, Y):
                 acc.append(score.history['val_accuracy'][-1])
             except:
                 print(f"Error in val_accuracy readout: {score.history}")
-        print(f"Optimizer {cat2opt[X[i]]}, epoch {Y[i]}, val accuracy kFold: {round(np.mean(acc), 4)}")
+        print(f"Optimizer {cat2opt[X[i]]}, epoch {Y[i]}, batch {Z[i]}, val accuracy kFold: {round(np.mean(acc), 4)}")
         out.append(np.mean(acc))
 
     return out
-
-
-def schaffer(X, Y):
-    """constraints=100, minimum f(0,0)=0"""
-    numer = np.square(np.sin(X ** 2 - Y ** 2)) - 0.5
-    denom = np.square(1.0 + (0.001 * (X ** 2 + Y ** 2)))
-
-    return 0.5 + (numer * (1.0 / denom))
-
-
-def eggholder(X, Y):
-    """constraints=512, minimum f(512, 414.2319)=-959.6407"""
-    y = Y + 47.0
-    a = (-1.0) * (y) * np.sin(np.sqrt(np.absolute((X / 2.0) + y)))
-    b = (-1.0) * X * np.sin(np.sqrt(np.absolute(X - y)))
-    return a + b
-
-
-def booth(X, Y):
-    """constraints=10, minimum f(1, 3)=0"""
-    return ((X) + (2.0 * Y) - 7.0) ** 2 + ((2.0 * X) + (Y) - 5.0) ** 2
-
-
-def matyas(X, Y):
-    """constraints=10, minimum f(0, 0)=0"""
-    return (0.26 * (X ** 2 + Y ** 2)) - (0.48 * X * Y)
-
-
-def cross_in_tray(X, Y):
-    """constraints=10,
-    minimum f(1.34941, -1.34941)=-2.06261
-    minimum f(1.34941, 1.34941)=-2.06261
-    minimum f(-1.34941, 1.34941)=-2.06261
-    minimum f(-1.34941, -1.34941)=-2.06261
-    """
-    B = np.exp(np.absolute(100.0 - (np.sqrt(X ** 2 + Y ** 2) / np.pi)))
-    A = np.absolute(np.sin(X) * np.sin(Y) * B) + 1
-    return -0.0001 * (A ** 0.1)
-
-
-def levi(X, Y):
-    """constraints=10,
-    minimum f(1,1)=0.0
-    """
-    A = np.sin(3.0 * np.pi * X) ** 2
-    B = ((X - 1) ** 2) * (1 + np.sin(3.0 * np.pi * Y) ** 2)
-    C = ((Y - 1) ** 2) * (1 + np.sin(2.0 * np.pi * Y) ** 2)
-    return A + B + C
 
 
 def main():
@@ -298,23 +252,11 @@ def main():
 
     funcs = {
         "DNN": DNN,
-        "mNN": mNN,
-        "schaffer": schaffer,
-        "eggholder": eggholder,
-        "booth": booth,
-        "matyas": matyas,
-        "cross": cross_in_tray,
-        "levi": levi,
+        "mNN": mNN
     }
     func_constraints = {
         "DNN": 100.0,
         "mNN": 100.0,
-        "schaffer": 100.0,
-        "eggholder": 512.0,
-        "booth": 10.0,
-        "matyas": 10.0,
-        "cross": 10.0,
-        "levi": 10.0,
     }
 
     if args.func in funcs:
@@ -340,7 +282,7 @@ def main():
 
     C = args.c
     # first is batch size, second epoch
-    constraints = [[1, 6], [1, 50]]
+    constraints = [[1, 6], [1, 5], [5, 7]]
 
     opt_func = func
 
@@ -374,7 +316,7 @@ def main():
     _best = sorted(_sols, key=lambda x: x[0], reverse=maximize)[0]
     print("Results:")
     print(gen_time)
-    print(_sols)
+    print(solutions)
     print(_best)
 
 
