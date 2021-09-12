@@ -33,6 +33,7 @@ cat2opt = {
     6: "adamax"
 }
 
+
 class NeuralNetwork:
     def __init__(self, train_samples, test_samples, fashion=False, optimizer="rmsprop"):
         self.opt = optimizer
@@ -282,7 +283,7 @@ def main():
 
     C = args.c
     # first is batch size, second epoch
-    constraints = [[1, 6], [1, 5], [5, 7]]
+    constraints = [[1, 6], [1, 30], [1, 7]]
 
     opt_func = func
 
@@ -293,14 +294,8 @@ def main():
     maximize = args.max
     solutions = []
     opt_alg = WhaleOptimization(opt_func, constraints, nsols, b, a, a_step, maximize)
-    solutions.append(opt_alg.get_solutions2())
-    colors = [[1.0, 1.0, 1.0] for _ in range(nsols)]
+    solutions.append(opt_alg.get_solutions())
 
-    # a_scatter = AnimateScatter(constraints[0][0],
-    # constraints[0][1],
-    # constraints[1][0],
-    # constraints[1][1],
-    # solutions, colors, opt_func, args.r, args.t)
     import time
     _time = []
     t2 = time.time()
@@ -309,7 +304,7 @@ def main():
         t1 = time.time()
         opt_alg.optimize()
         _time.append(time.time() - t1)
-        solutions.append(opt_alg.get_solutions2())
+        solutions.append(opt_alg.get_solutions())
         # a_scatter.update(solutions)
     gen_time = time.time() - t2
     _sols = opt_alg.print_best_solutions()

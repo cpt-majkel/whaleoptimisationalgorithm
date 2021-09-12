@@ -21,10 +21,6 @@ class WhaleOptimization:
 
     def get_solutions(self):
         """return solutions"""
-        return self._sols
-
-    def get_solutions2(self):
-        """return solutions"""
         print(f"X{self._sols[:, 0]}Y{self._sols[:, 1]}Z{self._sols[:, 2]}")
         try:
             fitness = self.results[f"X{self._sols[:, 0]}Y{self._sols[:, 1]}Z{self._sols[:, 2]}"]
