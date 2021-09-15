@@ -21,13 +21,14 @@ class WhaleOptimization:
 
     def get_solutions(self):
         """return solutions"""
-        print(f"X{self._sols[:, 0]}Y{self._sols[:, 1]}Z{self._sols[:, 2]}")
-        try:
-            fitness = self.results[f"X{self._sols[:, 0]}Y{self._sols[:, 1]}Z{self._sols[:, 2]}"]
-        except KeyError:
-            fitness = self._opt_func(self._sols[:, 0], self._sols[:, 1], self._sols[:, 2])
-            self.results[f"X{self._sols[:, 0]}Y{self._sols[:, 1]}Z{self._sols[:, 2]}"] = fitness
-        return [(f, s) for f, s in zip(fitness, self._sols)]
+        #print(f"X{self._sols[:, 0]}Y{self._sols[:, 1]}Z{self._sols[:, 2]}")
+        # try:
+        #     fitness = self.results[f"X{self._sols[:, 0]}Y{self._sols[:, 1]}Z{self._sols[:, 2]}"]
+        # except KeyError:
+        #     fitness = self._opt_func(self._sols[:, 0], self._sols[:, 1], self._sols[:, 2])
+        #     self.results[f"X{self._sols[:, 0]}Y{self._sols[:, 1]}Z{self._sols[:, 2]}"] = fitness
+        # return [(f, s) for f, s in zip(fitness, self._sols)]
+        return self._sols
 
     def optimize(self):
         """solutions randomly encircle, search or attack"""
@@ -92,16 +93,16 @@ class WhaleOptimization:
         return [s[1] for s in ranked_sol]
 
     def print_best_solutions(self):
-        #print("generation best solution history")
-        #print("([loss value], [batch, epoch])")
-        #for s in self._best_solutions:
-        #    print(s)
-        #print("\n")
-        #print("best solution")
-        #print("([loss value], [batch, epoch])")
-        #print(
-        #    sorted(self._best_solutions, key=lambda x: x[0], reverse=self._maximize)[0]
-        #)
+        print("generation best solution history")
+        print("([loss value], [opt, epoch, batch])")
+        for s in self._best_solutions:
+           print(s)
+        print("\n")
+        print("best solution")
+        print("([loss value], [opt, epoch, batch])")
+        print(
+           sorted(self._best_solutions, key=lambda x: x[0], reverse=self._maximize)[0]
+        )
         return sorted(self._best_solutions, key=lambda x: x[0], reverse=self._maximize)
 
     def _compute_A(self):

@@ -283,7 +283,7 @@ def main():
 
     C = args.c
     # first is batch size, second epoch
-    constraints = [[1, 6], [1, 30], [1, 7]]
+    constraints = [[1, 6], [1, 50], [1, 7]]
 
     opt_func = func
 
@@ -300,15 +300,14 @@ def main():
     _time = []
     t2 = time.time()
     for i in range(ngens):
-        #print("Gen {}".format(i))
         t1 = time.time()
         opt_alg.optimize()
         _time.append(time.time() - t1)
         solutions.append(opt_alg.get_solutions())
+        print(f"Gen {i}, {sorted(opt_alg.get_solutions(), key=lambda x: x[0], reverse=True)[0]}")
         # a_scatter.update(solutions)
     gen_time = time.time() - t2
-    _sols = opt_alg.print_best_solutions()
-    _best = sorted(_sols, key=lambda x: x[0], reverse=maximize)[0]
+    _best = opt_alg.print_best_solutions()
     print("Results:")
     print(gen_time)
     print(solutions)
@@ -316,5 +315,5 @@ def main():
 
 
 if __name__ == "__main__":
-    print("MNIST, epoch (0-50), discrete opt, batch 128")
+    #print("MNIST, epoch (0-50), discrete opt, batch 128")
     main()
