@@ -10,6 +10,7 @@ class WhaleOptimization:
 
     def __init__(self, opt_func, constraints, nsols, b, a, a_step, maximize=False):
         self._opt_func = opt_func
+        self.results = {}
         self._constraints = constraints
         self._sols = self._init_solutions(nsols)
         self._b = b
@@ -20,12 +21,14 @@ class WhaleOptimization:
 
     def get_solutions(self):
         """return solutions"""
+        #print(f"X{self._sols[:, 0]}Y{self._sols[:, 1]}Z{self._sols[:, 2]}")
+        # try:
+        #     fitness = self.results[f"X{self._sols[:, 0]}Y{self._sols[:, 1]}Z{self._sols[:, 2]}"]
+        # except KeyError:
+        #     fitness = self._opt_func(self._sols[:, 0], self._sols[:, 1], self._sols[:, 2])
+        #     self.results[f"X{self._sols[:, 0]}Y{self._sols[:, 1]}Z{self._sols[:, 2]}"] = fitness
+        # return [(f, s) for f, s in zip(fitness, self._sols)]
         return self._sols
-
-    def get_solutions2(self):
-        """return solutions"""
-        fitness = self._opt_func(self._sols[:, 0], self._sols[:, 1])
-        return [(f, s) for f, s in zip(fitness, self._sols)]
 
     def optimize(self):
         """solutions randomly encircle, search or attack"""
@@ -46,6 +49,7 @@ class WhaleOptimization:
                     new_s = self._search(s, random_sol, A)
             else:
                 new_s = self._attack(s, best_sol)
+            new_s = self._discretize(new_s)
             new_sols.append(self._constrain_solution(new_s))
 
         self._sols = np.stack(new_sols)
@@ -55,7 +59,7 @@ class WhaleOptimization:
         """initialize solutions uniform randomly in space"""
         sols = []
         for c in self._constraints:
-            sols.append(np.random.uniform(c[0], c[1], size=nsols))
+            sols.append(np.random.randint(c[0], c[1], size=nsols))
 
         sols = np.stack(sols, axis=-1)
         return sols
@@ -73,7 +77,11 @@ class WhaleOptimization:
 
     def _rank_solutions(self):
         """find best solution"""
-        fitness = self._opt_func(self._sols[:, 0], self._sols[:, 1])
+        try:
+            fitness = self.results[f"X{self._sols[:, 0]}Y{self._sols[:, 1]}Z{self._sols[:, 2]}"]
+        except KeyError:
+            fitness = self._opt_func(self._sols[:, 0], self._sols[:, 1], self._sols[:, 2])
+            self.results[f"X{self._sols[:, 0]}Y{self._sols[:, 1]}Z{self._sols[:, 2]}"] = fitness
         sol_fitness = [(f, s) for f, s in zip(fitness, self._sols)]
 
         # best solution is at the front of the list
@@ -85,24 +93,24 @@ class WhaleOptimization:
         return [s[1] for s in ranked_sol]
 
     def print_best_solutions(self):
-        #print("generation best solution history")
-        #print("([loss value], [batch, epoch])")
-        #for s in self._best_solutions:
-        #    print(s)
-        #print("\n")
-        #print("best solution")
-        #print("([loss value], [batch, epoch])")
-        #print(
-        #    sorted(self._best_solutions, key=lambda x: x[0], reverse=self._maximize)[0]
-        #)
+        print("generation best solution history")
+        print("([loss value], [opt, epoch, batch])")
+        for s in self._best_solutions:
+           print(s)
+        print("\n")
+        print("best solution")
+        print("([loss value], [opt, epoch, batch])")
+        print(
+           sorted(self._best_solutions, key=lambda x: x[0], reverse=self._maximize)[0]
+        )
         return sorted(self._best_solutions, key=lambda x: x[0], reverse=self._maximize)
 
     def _compute_A(self):
-        r = np.random.uniform(0.0, 1.0, size=2)
+        r = np.random.uniform(0.0, 1.0, size=3)
         return (2.0 * np.multiply(self._a, r)) - self._a
 
     def _compute_C(self):
-        return 2.0 * np.random.uniform(0.0, 1.0, size=2)
+        return 2.0 * np.random.uniform(0.0, 1.0, size=3)
 
     def _encircle(self, sol, best_sol, A):
         D = self._encircle_D(sol, best_sol)
@@ -123,8 +131,15 @@ class WhaleOptimization:
 
     def _attack(self, sol, best_sol):
         D = np.linalg.norm(best_sol - sol)
-        L = np.random.uniform(-1.0, 1.0, size=2)
+        L = np.random.uniform(-1.0, 1.0, size=3)
         return (
             np.multiply(np.multiply(D, np.exp(self._b * L)), np.cos(2.0 * np.pi * L))
             + best_sol
         )
+
+    def _discretize(self, sol):
+        dsols = []
+        for el in sol:
+            dsols.append(round(el))
+        return dsols
+
