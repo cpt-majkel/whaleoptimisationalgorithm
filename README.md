@@ -1,5 +1,5 @@
-# Whale Optimization Algorithm
-Python implementation of the Whale Optimization Algorithm.
+# Whale Optimization Algorithm for DNN purposes
+Python implementation of the Whale Optimization Algorithm used to optimize dnn hyperparameters
 
 Whale Optimisation Algorithm (WOA) based on the swarm foraging behavior of humpback whales used to optimise 
 neural network hyperparameters. Additionally, we have implemented a third dimension feature analysis to the 
