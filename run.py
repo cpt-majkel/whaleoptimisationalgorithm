@@ -4,7 +4,6 @@ import numpy as np
 from keras import layers, models, utils
 from keras.datasets import mnist, fashion_mnist
 import tensorflow as tf
-from src.animate_scatter import AnimateScatter
 from src.whale_optimization import WhaleOptimization
 from sklearn.model_selection import KFold
 from keras.datasets import reuters
